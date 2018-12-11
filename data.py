@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from imgaug import augmenters as iaa
 from keras import backend as K
+from sklearn.model_selection import StratifiedKFold
 
 
 K.set_image_data_format('channels_last')
@@ -29,6 +30,15 @@ def class_weight(labels):
     y_count.extend(y)
   cw = compute_class_weight('balanced', np.arange(28), y_count)
   return cw
+
+
+def kfold_dataset(labels, weights, n_folds):
+  label_list = [np.array(x[1].split(),dtype=np.int) for x in labels]
+  y = np.array([x[np.argmax(weights[x])] for x in label_list])
+  X = np.arange(len(labels))
+  skf = StratifiedKFold(n_splits=n_folds)
+  return skf.split(X, y)
+
 
 
 
@@ -65,11 +75,11 @@ class DataGenerator():
             y = np.empty((self.batch_size, self.n_classes), dtype=int)
         
             # Generate data
-            colors = ['red', 'green', 'blue', 'yellow']
+            colors = ['red', 'green', 'blue']
             for i, ID in enumerate(list_IDs_temp):                                  
                 # Read image and store in batch                                     
                 img_name = self.labels[ID][0]                                       
-                image_array = np.zeros((self.dim[0],self.dim[1],4))                 
+                image_array = np.zeros((self.dim[0],self.dim[1],4))                
                 for n, c in enumerate(colors):                                      
                     im = Image.open(self.data_path + '/' + img_name + '_' + c + '.png')
                     im_res = im.resize(self.dim, Image.ANTIALIAS)                   

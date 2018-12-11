@@ -3,6 +3,8 @@
 import numpy as np
 from sklearn.utils import compute_class_weight
 
+import data
+
 
 def class_weight(labels):
   y_train = [np.array(x[1].split()).astype(np.int) for x in labels]
