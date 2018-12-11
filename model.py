@@ -6,16 +6,26 @@ import tensorflow as tf
 from keras.models import *
 from keras.layers import *
 from keras.applications.inception_v3 import InceptionV3
+from keras.applications.densenet import DenseNet121                             
+from keras.applications.resnet50 import ResNet50
 from keras import backend as K
 
 K.set_image_data_format('channels_last')
 
 
-def create_model(input_shape, n_out):
-   
-    pretrain_model = InceptionV3(
-        include_top=False, pooling='avg',
-        weights='imagenet', input_shape=input_shape)
+def create_model(input_shape, n_out, base_model='inceptionv3'):
+    if base_model == 'inceptionv3':
+        pretrain_model = InceptionV3(
+            include_top=False, pooling='avg',
+            weights='imagenet', input_shape=input_shape)
+    elif base_model == 'resnet50':
+        pretrain_model = ResNet50(                                           
+            include_top=False, pooling='avg',                                   
+            weights='imagenet', input_shape=input_shape)
+    elif base_model == 'densenet121':                                              
+        pretrain_model = DenseNet121(                                              
+            include_top=False, pooling='avg',                                   
+            weights='imagenet', input_shape=input_shape)
     
     model = Sequential()
     model.add(pretrain_model)
