@@ -12,13 +12,10 @@ from PIL import Image
 import pandas as pd
 
 import keras
-import tensorflow as tf
 from keras.models import load_model
 from keras import backend as K
 
-import data
 import model
-import utils
 from keras_tta import TTA_ModelWrapper
 
 from tqdm import tqdm
@@ -40,11 +37,13 @@ def load_val_image(data_path, idx):
 
 input_img_shape = (512,512,3)
 
-model = load_model('pretrained_model/inceptionv3_final.h5', custom_objects={'combine_loss':model.combine_loss})
+threshold = 0.3
+
+predict_model = load_model('pretrained_model/inceptionv3_final.h5', custom_objects={'combine_loss':model.combine_loss})
 
 #model.load_weights('pretrained_model/inceptionv3_weights_60epoch.h5')
 
-tta_model = TTA_ModelWrapper(model)
+tta_model = TTA_ModelWrapper(predict_model)
 
 submit = pd.read_csv('sample_submission.csv')
 
@@ -54,8 +53,7 @@ predicted = []
 for name in tqdm(submit['Id']):
     image = load_val_image(path, name)
     score_predict = tta_model.predict(image[np.newaxis])[0]
-    label_predict = np.arange(28)[score_predict[0]>=0.3]
-    print(label_predict)
+    label_predict = np.arange(28)[score_predict[0] >= threshold]
     str_predict_label = ' '.join(str(l) for l in label_predict)
     predicted.append(str_predict_label)
 
