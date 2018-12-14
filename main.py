@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+Train base CNN model for image classification of Kaggle HPA competition.
+Base models: DenseNet121, Inceptionv3, InceptionResNetv2
+
+Author: Minghao Liu
+Affliate: Mechanical Engineering, Arizona State University
+Date: Dec/13/2018
+"""
+
 
 import numpy as np
 import keras

@@ -23,8 +23,11 @@ class TTA_ModelWrapper():
             p1 = self.model.predict(self._expand(np.fliplr(x_i)))
             p2 = self.model.predict(self._expand(np.flipud(x_i)))
             p3 = self.model.predict(self._expand(np.fliplr(np.flipud(x_i))))
+            p4 = self.model.predict(self._expand(np.rot90(x_i)))
+            p5 = self.model.predict(self._expand(np.rot90(np.rot90(x_i))))
+            p6 = self.model.predict(self._expand(np.rot90(np.rot90(np.rot90(x_i)))))
         
-            p = (p0 + p1 + p2 + p3) / 4
+            p = (p0 + p1 + p2 + p3 + p4 + p5 +p6) / 6
             pred.append(p)
         return np.array(pred)
 
