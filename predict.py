@@ -38,7 +38,7 @@ def load_test_image(data_path, input_img_shape, idx):
 
 
 def ensemble_predict(model_paths, input_shape, test_path, sample_submit, ensemble_weight):
-	ensemble_weight = np.array(ensemble_weight) / np.sum(ensemble_weight)
+    ensemble_weight = np.array(ensemble_weight) / np.sum(ensemble_weight)
 
     models = []
     for mp in model_paths:
