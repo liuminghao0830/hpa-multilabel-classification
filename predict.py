@@ -37,8 +37,33 @@ def load_test_image(data_path, input_img_shape, idx):
     return np.array(img[:,:,:3])
 
 
-def ensemble_predict(model_paths, input_shape, test_path, sample_submit, ensemble_weight):
-    ensemble_weight = np.array(ensemble_weight) / np.sum(ensemble_weight)
+def ensemble_predict(model_paths, input_shape, test_path, sample_submit, 
+                    ensemble_weight, threshold=[0.3], method='hard_voting'):
+    def weighted_average(models, image, ensemble_weight):
+        ensemble_weight = np.array(ensemble_weight) / np.sum(ensemble_weight)
+        for i,base_model in enumerate(models):
+            predict_prob += ensemble_weight[i]*base_model.predict(image[np.newaxis])[0]
+        #predict_prob = predict_prob / len(models)
+        label_predict = np.arange(28)[predict_prob >= np.array(threshold)]
+        return label_predict
+
+    def mean_average(models, image):
+        for i,base_model in enumerate(models):
+            predict_prob += base_model.predict(image[np.newaxis])[0]
+        predict_prob = predict_prob / len(models)
+        label_predict = np.arange(28)[predict_prob >= np.array(threshold)]
+        return label_predict
+
+    def hard_voting(models, image):
+        voting_threshold = 0.5*np.ones(28)*len(models)
+        preds = np.zeros(28)
+        for i,base_model in enumerate(models):
+            predict_prob = base_model.predict(image[np.newaxis])[0]
+            mask = predict_prob >= np.array(threshold)
+            preds[mask] += np.ones(28)[mask]
+        label_predict = preds >= voting_threshold
+        return label_predict
+
 
     models = []
     for mp in model_paths:
@@ -47,14 +72,15 @@ def ensemble_predict(model_paths, input_shape, test_path, sample_submit, ensembl
         models.append(base_model)
     predicted = []
 
-    threshold = 0.3
     for name in tqdm(sample_submit['Id']):
         predict_prob = np.zeros(28)
         image = load_test_image(test_path, input_shape, name)
-        for i,base_model in enumerate(models):
-            predict_prob += ensemble_weight[i]*base_model.predict(image[np.newaxis])[0]
-        #predict_prob = predict_prob / len(models)
-        label_predict = np.arange(28)[predict_prob >= threshold]
+        if method == 'mean_average':
+            label_predict = mean_average(models, image)
+        elif method == 'weighted_average':
+            label_predict = weighted_average(models, image, ensemble_weight)
+        elif method == 'hard_voting':
+            label_predict = hard_voting(models, image)
         str_predict_label = ' '.join(str(l) for l in label_predict)
         predicted.append(str_predict_label)
 
@@ -66,7 +92,7 @@ def ensemble_predict(model_paths, input_shape, test_path, sample_submit, ensembl
 
 
 
-def base_model_predict(model_path, input_shape, test_path, sample_submit):
+def base_model_predict(model_path, input_shape, test_path, sample_submit, threshold=[0.3]):
     predict_model = load_model(model_path, custom_objects={'combine_loss':model.combine_loss,'f1':model.f1})
     threshold = 0.3
     #model.load_weights('pretrained_model/inceptionv3_weights_60epoch.h5')
@@ -77,10 +103,10 @@ def base_model_predict(model_path, input_shape, test_path, sample_submit):
     for name in tqdm(sample_submit['Id']):
         image = load_test_image(test_path, input_shape, name)
         score_predict = tta_model.predict(image[np.newaxis])[0]
-        label_predict = np.arange(28)[score_predict[0] >= threshold]
+        label_predict = np.arange(28)[score_predict[0] >= np.array(threshold)]
         str_predict_label = ' '.join(str(l) for l in label_predict)
         predicted.append(str_predict_label)
-
+        print(str_predict_label)
 
     sample_submit['Predicted'] = predicted
     sample_submit.to_csv('submission.csv', index=False)
@@ -91,18 +117,18 @@ def main():
 
     input_img_shape = (512, 512, 3)
 
-    threshold = 0.3
+    threshold = [0.3]
 
     submit = pd.read_csv('sample_submission.csv')
 
     test_path = 'test'
 
-    #model_paths = ['pretrained_model/inceptionv3.h5','pretrained_model/densenet121.h5','pretrained_model/inceptionresnetv2.h5']
-    model_paths = 'pretrained_model/inceptionv3_external.h5'
+    model_paths = ['pretrained_model/inceptionv3.h5','pretrained_model/densenet121.h5', 'pretrained_model/inceptionresnetv2.h5']
+    #model_paths = 'pretrained_model/dense169_512_30epoch.h5'
     if ensemble:
-        ensemble_predict(model_paths, input_img_shape, test_path, submit, [0.45,0.45,0.42])
+        ensemble_predict(model_paths, input_img_shape, test_path, submit, [0.45,0.45,0.42], threshold)
     else:
-        base_model_predict(model_paths, input_img_shape, test_path, submit)
+        base_model_predict(model_paths, input_img_shape, test_path, submit, threshold)
 
 
 if __name__ == '__main__':
