@@ -1,0 +1,7 @@
+# Multi-label classification pipeline for human protein atlas image
+Procedure:
+1. Baseline deep learning model: 
+   Inceptionv3, Densenet121 and InceptionResNetv2 with GAP head
+2. K-fold cross-validation
+3. Test time augmentation
+4. Ensemble prediction
